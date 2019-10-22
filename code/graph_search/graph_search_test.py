@@ -2,6 +2,96 @@
 import random
 #from ..utils.utils import build_graph
 
+
+def topological_order(G):
+
+    # Assumes G is DAG
+    n = len(list(G.keys()))   # Number of nodes in graph
+
+    top_order = [None] * n
+    index = n
+
+    while index > 0:
+        v = find_sink(G)
+        print("Sink vertex:", v)
+        top_order[index  -1] = v
+        remove_sink(G, v)
+        print("G:", G)
+        index -= 1
+
+    return top_order
+
+def topological_order_dfs(G):
+
+    n = len(list(G.keys()))    # number of nodes
+    top_order = [None]* n
+    index = n
+
+    visited = {}
+    for node in list(G.keys()):
+        visited[node] = False
+
+    for node in list(G.keys()):
+        if visited[node] == False:
+            index = dfs_top_order(G, node, visited, index, top_order)
+
+    return top_order
+
+# def dfs_top_order_global(G, start, visited, top_order):
+#     global index
+#     print("Running DSF function with following parameters:")
+#     print("start vertex:", start)
+#     print("Index:", index)
+#     print("Visited:",visited)
+#     #print("visited =", visited)
+#     visited[start] = True
+#     for node in G[start]:
+#         print("G[NODE]:", G[start])
+#         if visited[node] == False:
+#             #print("Node not sink", node)
+#             visited[node] = True
+#             dfs_top_order(G, node, visited, index, top_order)
+#
+#
+#     top_order[index - 1] = start
+#     index -= 1
+
+def dfs_top_order(G, start, visited, index, top_order):
+    print("Running DSF function with following parameters:")
+    print("start vertex:", start)
+    print("Index:", index)
+    print("Visited:",visited)
+    #print("visited =", visited)
+    visited[start] = True
+    for node in G[start]:
+        if visited[node] == False:
+            #print("Node not sink", node)
+            visited[node] = True
+            index = dfs_top_order(G, node, visited, index, top_order)
+
+
+    top_order[index - 1] = start
+    index -= 1
+
+    return index
+
+
+def find_sink(G):
+
+    for node in list(G.keys()):
+        if len(G[node]) == 0:
+            return node
+
+def remove_sink(G, v):
+
+    for node in list(G.keys()):
+        print("Node:", node)
+        if v in G[node]: G[node].remove(v)
+    del G[v]
+    print("G after delete", G)
+
+
+
 def bfs(graph, v):
 
     # Initialize all vertices are un-explored
@@ -120,17 +210,24 @@ def dfs_rec_test(graph,v):
     dfs_order = dfs_rec_out(graph, v)
     print("DFS order", dfs_order)
 
+def test_top_order():
+
+    G = build_graph("/Users/rahul/Coursera/Algorithms/coursera_stanford/algorithms/inputs/top_order_ex2.txt")
+    print(G)
+    #print("Topological order:", topological_order(G))
+    print("Topological order:", topological_order_dfs(G))
 
 if __name__ == '__main__':
 
-    graph = build_graph("/Users/rahul/Coursera/Algorithms/coursera_stanford/inputs/test_graph.txt")
-    v = list(graph.keys())[0]
-
-    print("BFS test ----- ")
-    bfs_test(graph, v)
-
-    print("DFS test ----- ")
-    dfs_test(graph, v)
-
-    print("DFS Recursive test ----- ")
-    dfs_rec_test(graph,v)
+    # graph = build_graph("/Users/rahul/Coursera/Algorithms/coursera_stanford/inputs/test_graph.txt")
+    # v = list(graph.keys())[0]
+    #
+    # print("BFS test ----- ")
+    # bfs_test(graph, v)
+    #
+    # print("DFS test ----- ")
+    # dfs_test(graph, v)
+    #
+    # print("DFS Recursive test ----- ")
+    # dfs_rec_test(graph,v)
+    test_top_order()
