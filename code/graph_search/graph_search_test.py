@@ -1,6 +1,150 @@
 
 import random
+import sys
+import threading
 #from ..utils.utils import build_graph
+import resource
+
+def build_graph_from_edges(file):
+
+    graph = {}
+
+    with open(file) as fp:
+        for line in fp:
+            x = line.rstrip("\n").split(" ")
+            if x[0] in graph:
+                graph[x[0]].append(x[1])
+            else:
+                graph[x[0]] = [x[1]]
+
+    for i in range(1, 875714):
+        if str(i) not in graph:
+            graph[str(i)] = []
+
+    return graph
+
+def test_build_graph_from_edges():
+
+    threading.stack_size(67108864)
+    #sys.setrecursionlimit(2 ** 20)
+    #resource.setrlimit(resource.RLIMIT_STACK, (10**10, 10**10))
+    thread = threading.Thread(target=test_build_graph_from_edges)
+    thread.start()
+
+    sys.setrecursionlimit(800000)
+    resource.setrlimit(resource.RLIMIT_STACK, (2**21, 2**22))
+
+    filename = ("/Users/rahul/Coursera/Algorithms/coursera_stanford/algorithms/inputs/scc.txt")
+
+    print("Recursion Limit", sys.getrecursionlimit())
+
+    G = build_graph_from_edges(filename)
+    print(G['472856'])
+    [leaders, scc_count] = commpute_scc(G)
+    print("SCCs =", scc_count)
+
+def commpute_scc(G):
+
+    #print("Original graph:", G)
+    n = len(list(G.keys()))
+    order =  [str(x) for x in range( 1, n+1)]
+
+    graph_reversal(G)
+    print("graph reversal done")
+    #print("Reversed Graph:", G)
+    [final_order, temp] = dfs_loop(G, order)
+    #print("Final order in reverse DFS pass:", final_order)
+    graph_reversal(G)
+    #print("Get back original graph:", G)
+    [temp, leader] = dfs_loop(G, final_order)
+
+    scc_count = group_sccs(leader)
+
+    return leader, scc_count
+
+def dfs_loop(G, order):
+
+    visited = {}
+    for node in list(G.keys()):
+        visited[node] = False
+
+    n = len(list(G.keys()))
+
+    finish_order = [None] * n
+    index = 0
+    leader = {}
+
+    for node in reversed(order):
+        leader_node = node
+        if visited[node] == False:
+            index = dfs_rec_scc(G, node, visited, finish_order, leader, leader_node, index)
+
+    return finish_order, leader
+
+def dfs_rec_scc(G, node, visited, finish_order, leader,leader_node, index):
+
+    visited[node] = True
+    leader[node] = leader_node
+    for n in G[node]:
+        if visited[n] == False:
+            dfs_rec_scc(G, n, visited, finish_order, leader, leader_node, index)
+
+    finish_order[index] = node
+    index += 1
+    return index
+
+def group_sccs(leader):
+
+    scc_count = {}
+    for node in list(leader.keys()):
+        if leader[node] in scc_count:
+            scc_count[leader[node]] += 1
+        else:
+            scc_count[leader[node]] = 1
+
+    return scc_count
+
+def test_scc():
+
+    G = build_graph("/Users/rahul/Coursera/Algorithms/coursera_stanford/algorithms/inputs/test_dfs_loop.txt")
+    [leaders, scc_count] = commpute_scc(G)
+    print("SCCs =", scc_count)
+
+def test_dfs_loop():
+
+    G = build_graph("/Users/rahul/Coursera/Algorithms/coursera_stanford/algorithms/inputs/test_dfs_loop.txt")
+    n = len(list(G.keys()))
+    print("Original Graph:", G)
+    print("Number of nodes =", n)
+
+    graph_reversal(G)
+
+    order = ['2', '4', '5', '1', '3', '6']
+    #order =  [str(x) for x in range( 1, n+1)]
+
+    print("order:", order)
+    print("Reversed Graph:", G)
+    print("Finish order:", dfs_loop(G, order))
+
+
+
+def graph_reversal(G):
+
+    degree = {}   # out degree of nodes
+    for node in list(G.keys()):
+        degree[node] = len(G[node])
+
+    for node in list(G.keys()):
+        for v in G[node][: degree[node]]:
+            G[v].append(node)
+        del G[node][: degree[node]]
+
+def test_graph_reversal():
+
+    G = build_graph("/Users/rahul/Coursera/Algorithms/coursera_stanford/algorithms/inputs/graph_rev_test.txt")
+    print(G)
+    graph_reversal(G)
+    print("Reversed graph:", G)
 
 
 def topological_order(G):
@@ -37,24 +181,6 @@ def topological_order_dfs(G):
 
     return top_order
 
-# def dfs_top_order_global(G, start, visited, top_order):
-#     global index
-#     print("Running DSF function with following parameters:")
-#     print("start vertex:", start)
-#     print("Index:", index)
-#     print("Visited:",visited)
-#     #print("visited =", visited)
-#     visited[start] = True
-#     for node in G[start]:
-#         print("G[NODE]:", G[start])
-#         if visited[node] == False:
-#             #print("Node not sink", node)
-#             visited[node] = True
-#             dfs_top_order(G, node, visited, index, top_order)
-#
-#
-#     top_order[index - 1] = start
-#     index -= 1
 
 def dfs_top_order(G, start, visited, index, top_order):
     print("Running DSF function with following parameters:")
@@ -172,10 +298,6 @@ def dfs_rec(graph, w, visited, dfs_order):
             dfs_rec(graph, node, visited, dfs_order)
 
 
-
-
-
-
 def build_graph(filename):
 
     graph = {}
@@ -230,4 +352,11 @@ if __name__ == '__main__':
     #
     # print("DFS Recursive test ----- ")
     # dfs_rec_test(graph,v)
-    test_top_order()
+    #test_top_order()
+
+    #test_graph_reversal()
+
+    #test_dfs_loop()
+    #test_scc()
+
+    test_build_graph_from_edges()
